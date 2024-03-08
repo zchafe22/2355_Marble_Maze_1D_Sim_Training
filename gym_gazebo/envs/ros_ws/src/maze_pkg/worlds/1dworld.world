@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+ 
+
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://ball</uri> 
+      <pose>-0.012754 -0.034496 0.155751 0 0 0</pose>
+    </include>
+
+    <!-- Global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Default camera location -->
+    <gui>
+      <camera name="user_camera">
+        <pose>0.419532 -0.360341 0.524924 0 0.663644 2.344196</pose> <!-- god view -->
+      </camera>
+    </gui>
+
+  </world>
+</sdf>

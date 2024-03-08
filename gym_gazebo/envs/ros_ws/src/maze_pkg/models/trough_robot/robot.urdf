@@ -1,0 +1,283 @@
+<robot name="onshape">
+    <link name="base_link">
+        <visual>
+            <origin xyz="0.11949701086502559355 0.070479405808606149231 1.7529380724745635689e-15"
+                rpy="1.5960583111832817473e-15 -0 1.570796326794896558" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/base.stl" />
+            </geometry>
+            <material name="base_material">
+                <color
+                    rgba="0.76862745098039220171 0.88627450980392152857 0.95294117647058818044 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.11949701086502559355 0.070479405808606149231 1.7529380724745635689e-15"
+                rpy="1.5960583111832817473e-15 -0 1.570796326794896558" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/base.stl" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin
+                xyz="1.3872562269298152063e-16 4.1633363423443370266e-17 0.0012500000000019505057"
+                rpy="0 0 0" />
+            <mass value="2.6617299439851698217" />
+            <inertia ixx="0.017017274279960359351" ixy="-9.0686254626461551497e-17"
+                ixz="-3.0095415976455749103e-17" iyy="0.053190104125555241754"
+                iyz="6.9628734978053017321e-17" izz="0.070204605770159078659" />
+        </inertial>
+    </link>
+
+    <link name="stand">
+        <visual>
+            <origin xyz="0.056521393985551157679 -0.002500000000000000052 -0.044299972711129904923"
+                rpy="3.141592653589793116 -3.1294429067573340241e-46 0" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/stand.stl" />
+            </geometry>
+            <material name="stand_material">
+                <color
+                    rgba="0.91764705882352937127 0.91764705882352937127 0.91764705882352937127 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.056521393985551157679 -0.002500000000000000052 -0.044299972711129904923"
+                rpy="3.141592653589793116 -3.1294429067573340241e-46 0" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/stand.stl" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="-6.9388939039072283776e-18 0 -0.064125085347417454251" rpy="0 0 0" />
+            <mass value="0.050338191997722707416" />
+            <inertia ixx="6.9102198907112233621e-05" ixy="2.8781170674092447788e-36"
+                ixz="2.1625138621119676919e-50" iyy="6.9416812607097998873e-05" iyz="0"
+                izz="5.2435616664294452135e-07" />
+        </inertial>
+    </link>
+
+    <link name="pivot">
+        <visual>
+            <origin xyz="0.2213392108678817749 -0.017908407375216487539 -0.0050000000000000001041"
+                rpy="-1.570796326794896558 -1.3151207453076949975e-32 -6.0727434063916491428e-34" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/pivot.stl" />
+            </geometry>
+            <material name="pivot_material">
+                <color rgba="0.2313725490196078538 0.38039215686274507888 0.7058823529411765163 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.2213392108678817749 -0.017908407375216487539 -0.0050000000000000001041"
+                rpy="-1.570796326794896558 -1.3151207453076949975e-32 -6.0727434063916491428e-34" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/pivot.stl" />
+            </geometry>
+        </collision>
+        <inertial>
+            <origin xyz="0 0 -0.0024999999999999996184" rpy="0 0 0" />
+            <mass value="0.0030826877913349899109" />
+            <inertia ixx="2.5689064927791622609e-08" ixy="-1.5600314683997402888e-41"
+                ixz="-1.6892099783026208026e-40" iyy="2.5689064927791622609e-08"
+                iyz="3.1953127314740970188e-39" izz="3.8533597391687450458e-08" />
+        </inertial>
+    </link>
+
+    <link name="trough">
+        <visual>
+            <origin xyz="-0.24444401264190665501 -0.012499999999999997224 -0.027500000000000034833"
+                rpy="-1.570796326794896558 -1.2143064331837689104e-16 -1.4631543355893053672e-17" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/trough.stl" />
+            </geometry>
+            <material name="trough_material">
+                <color
+                    rgba="0.64705882352941179736 0.64705882352941179736 0.64705882352941179736 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="-0.24444401264190665501 -0.012499999999999997224 -0.027500000000000034833"
+                rpy="-1.570796326794896558 -1.2143064331837689104e-16 -1.4631543355893053672e-17" />
+            <geometry>
+                <mesh
+                    filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/trough.stl" />
+            </geometry>
+            <surface>
+                <friction>
+                  <ode>
+                    <mu>0.0</mu>
+                    <mu2>0.0</mu2>
+                  </ode>
+                </friction>
+            </surface>
+        </collision>
+        <inertial>
+            <origin
+                xyz="5.5511151231257827021e-17 -0.0049297752808988709594 -0.027500000000000003608"
+                rpy="0 0 0" />
+            <mass value="1.00" />
+            <inertia ixx="0.2" ixy="0.2"
+                ixz="0.2" iyy="0.2"
+                iyz="0.2" izz="0.2" />
+        </inertial>
+    </link>
+
+    <link name="world"></link>
+
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="world" />
+        <child link="base_link" />
+    </joint>
+
+    <joint name="rev" type="revolute">
+        <origin xyz="2.7755575615628913511e-17 -2.7755575615628913511e-17 0"
+            rpy="3.141592653589793116 5.4655460427410899339e-18 -1.3631221383557510229" />
+        <parent link="pivot" />
+        <child link="trough" />
+        <axis xyz="0 0 1" />
+        <!-- <axis>
+            <xyz>0 0 1</xyz> -->
+        <dynamics damping="0.7" friction="100.0" />
+        <!-- <dynamics>
+            <damping>0</damping>
+            <friction>1</friction>
+        </dynamics> -->
+            <!-- <limit>
+              <lower>-0.52359877559829881566</lower>
+              <upper>0.52359877559829881566</upper>
+              <effort>1</effort>
+              <velocity>20</velocity>
+            </limit> -->
+          <!-- </axis> -->
+        <limit effort="1" velocity="1" lower="-0.52359877559829881566"
+            upper="0.52359877559829881566" />
+        <!-- <joint_properties friction="200" /> -->
+    </joint>
+
+    <joint name="Fastened 2" type="fixed">
+        <origin xyz="-2.0816681711721685133e-17 -0.0075000000000000014572 -0.12325017069483493182"
+            rpy="1.570796326794896558 -1.570796326794896558 0" />
+        <parent link="stand" />
+        <child link="pivot" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" velocity="20" />
+        <joint_properties friction="0.0" />
+    </joint>
+
+    <joint name="Fastened 1" type="fixed">
+        <origin xyz="0.024999999999999883427 -9.0205620750793968909e-17 0.0025000000000019173552"
+            rpy="-3.1415926535897922278 -0 3.1415926535897877869" />
+        <parent link="base_link" />
+        <child link="stand" />
+        <axis xyz="0 0 1" />
+        <limit effort="1" velocity="20" />
+        <joint_properties friction="0.0" />
+    </joint>
+
+    <gazebo reference="trough">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/trough</robotNamespace>
+
+        </plugin>
+
+    </gazebo>
+    <gazebo>
+        <plugin name="gazebo_ros_joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+            <updateRate>20</updateRate>
+            <joint_name>rev</joint_name>
+        </plugin>
+    </gazebo>
+    <transmission name="tran1">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="rev">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="motor1">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+
+    <!-- ################ Camera section ###################-->
+    <link name="camera_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.05 0.05 0.05"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.05 0.05 0.05"/>
+            </geometry>
+        </visual>
+
+        <inertial>
+            <mass value="1e-5" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+        </inertial>
+    </link>
+
+    <joint name="camera_joint" type="fixed">
+        <axis xyz="1 0 0" />
+        <origin xyz="0 0 .3" rpy="0 1.57079632679 -1.57079632679"/>
+        <parent link="base_link"/>
+        <child link="camera_link"/>
+    </joint>
+
+    <gazebo reference="camera_link">
+        <sensor type="camera" name="camera1">
+            <update_rate>30.0</update_rate>
+            <camera name="head">
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>400</width>
+                    <height>400</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <!-- Noise is sampled independently per pixel on each frame.
+               That pixel's noise value is added to each of its color
+               channels, which at that point lie in the range [0,1]. -->
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>wheel/camera1</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_link</frameName>
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+</robot>

@@ -1,0 +1,27 @@
+<sdf version="1.6">
+<model name="onshape">
+<link name="ball">
+<frame name="ball_frame"><pose>0 0 0 0 -0 0</pose></frame>
+<visual name="ball_0_ball_visual">
+<pose>-0.00013690318155568093061 -7.9041084973141551018e-05 -1.0639948123947196024e-12 0 -0 0</pose>
+<geometry>
+<mesh><uri>file://ball.stl</uri></mesh>
+</geometry>
+<material><ambient>0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1</ambient><diffuse>0.61568627450980395466 0.81176470588235294379 0.92941176470588238168 1</diffuse><specular>0.1 0.1 0.1 1</specular><emissive>0 0 0 0</emissive></material>
+</visual>
+<collision name="ball_0_ball_visual">
+<pose>-0.00013690318155568093061 -7.9041084973141551018e-05 -1.0639948123947196024e-12 0 -0 0</pose>
+<geometry>
+<mesh><uri>file://ball/ball.stl</uri></mesh>
+</geometry>
+</collision>
+<inertial>
+<pose frame="ball_frame">-0.00013690318155568093061 -7.9041084973141252862e-05 -1.0639948123947196024e-12 0 0 0</pose>
+<mass>3.3258994226003960287e-05</mass>
+<inertia><ixx>7.3539238593270916795e-10</ixx><ixy>0</ixy><ixz>0</ixz><iyy>7.3539238593270916795e-10</iyy><iyz>0</iyz><izz>7.3539238593270916795e-10</izz></inertia>
+</inertial>
+</link>
+
+
+</model>
+</sdf>

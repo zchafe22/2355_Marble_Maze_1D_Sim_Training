@@ -1,0 +1,26 @@
+<robot name="onshape">
+<link name="ball">
+<visual>
+<origin xyz="-0.00017887639114633202553 -5.1169543439755216241e-05 7.8157179814297705889e-05" rpy="0 -0 0" />
+<geometry>
+<mesh filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/ball/ball.stl" />
+</geometry>
+<material name="ball_material">
+<color rgba="0.59607843137254901134 0.12156862745098039047 0.6745098039215686736 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="-0.00017887639114633202553 -5.1169543439755216241e-05 7.8157179814297705889e-05" rpy="0 -0 0" />
+<geometry>
+<mesh filename="file:///home/fizzer/marble_maze/ENPH459-MarbleMaze-Sim/marble_maze_ws/src/maze_pkg/models/ball/ball.stl" />
+</geometry>
+</collision>
+<inertial>
+<origin xyz="-0.00017887639114633202553 -5.1169543439755216241e-05 7.8157179814298559698e-05" rpy="0 0 0"/>
+<mass value="0.11708581804378395685" />
+<inertia ixx="2.3417906641751647426e-05" ixy="0"  ixz="0" iyy="2.3417906641751647426e-05" iyz="0" izz="2.3417906641751647426e-05" />
+</inertial>
+</link>
+
+
+</robot>

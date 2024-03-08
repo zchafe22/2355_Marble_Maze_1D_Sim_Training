@@ -11,3 +11,10 @@ register(
     id='GazeboCartPole-v0',
     entry_point='gym_gazebo.envs.gazebo_cartpole:GazeboCartPolev0Env',
 )
+
+# marble maze
+register(
+    id='GazeboMarbleMaze-v0',
+    entry_point='gym_gazebo.envs.gazebo_marblemaze:GazeboMarbleMazev0Env',
+    max_episode_steps=3000,
+)

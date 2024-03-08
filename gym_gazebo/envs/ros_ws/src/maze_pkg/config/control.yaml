@@ -1,0 +1,11 @@
+trough:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50  
+
+  # Position Controllers ---------------------------------------
+  rev_position_controller:
+    type: velocity_controllers/JointVelocityController
+    joint: rev
+    pid: {p: 100.0, i: 0.01, d: 10.0}

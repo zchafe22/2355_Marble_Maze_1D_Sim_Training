@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="paused" default="true"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="verbose" default="false"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" default="false"/>
+    <!-- startup simulated world -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find maze_pkg)/worlds/1dworld.world"/>
+        <arg name="debug" value="$(arg debug)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+      </include>
+
+
+    <!-- Spawn the trough robot (ball is spawned in the world)-->
+    <param name="robot_description"
+           command="cat '$(find maze_pkg)/models/trough_robot/robot.urdf'" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+    args="-urdf -model robot -param robot_description -J rev 0.0"/>
+  
+    <!-- Load joint controller configurations from YAML file to parameter server -->
+    <rosparam file="$(find maze_pkg)/config/control.yaml" command="load"/>   
+
+    <!-- load the controllers -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" 
+          respawn="false" output="screen" ns="/trough" args="rev_position_controller joint_state_controller"/>
+
+    <!-- convert joint states to TF transforms for rviz, etc -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+      <remap from="/joint_states" to="/trough/joint_states" />
+    </node>
+
+    <!-- Comment out for no trough control script 
+    <node name="listener_node" pkg="maze_pkg" type="1d_trough_control.py" output="screen"/> -->
+</launch>
+
+
+  
