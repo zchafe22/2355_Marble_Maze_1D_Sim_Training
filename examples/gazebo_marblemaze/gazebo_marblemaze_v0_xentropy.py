@@ -202,7 +202,6 @@ def filter_batch(batch, percentile):
 if __name__ == '__main__':
     # Setup environment
     env = gym.make('GazeboMarbleMaze-v0')
-    exit()
 
     obs_size = env.observation_space.shape[0] #: Set observation size space
     n_actions = env.action_space.n #: Set action size space
@@ -219,6 +218,8 @@ if __name__ == '__main__':
     # For every batch of episodes (16 episodes per batch) we identify the
     # episodes in the top 30% and we train our NN on them.
     for iter_no, batch in enumerate(iterate_batches(env, net, BATCH_SIZE)):
+        print(str(iter_no))
+        
         # Identify the episodes that are in the top PERCENTILE of the batch
         obs_v, acts_v, reward_b, reward_m = filter_batch(batch, PERCENTILE)# identify the episode in top PERCENTILE
 
