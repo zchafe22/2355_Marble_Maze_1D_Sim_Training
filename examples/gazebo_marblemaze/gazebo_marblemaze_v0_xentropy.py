@@ -60,6 +60,7 @@ EpisodeStep = namedtuple('EpisodeStep', field_names=['observation', 'action'])
 
 
 def iterate_batches(env, net, batch_size):
+    print('interate_batches----------------------------------------------------')
     '''
     @brief a generator function that generates batches of episodes that are
            used to train NN on
@@ -82,18 +83,18 @@ def iterate_batches(env, net, batch_size):
     #   * x_dot
     #   * theta
     #   * theta_dot
+    print('before----------------------------------')
     obs = env.reset()
+    print('pass--------------------------------------')
 
     # Every iteration we send the current observation to the NN and obtain
     # a list of probabilities for each action
     while True:
         # Convert the observation to a tensor that we can pass into the NN
         obs_v = torch.FloatTensor([obs])
-
         # Run the NN and convert its output to probabilities by mapping the 
         # output through the SOFTMAX object.
         act_probs_v = sm(net(obs_v))
-
         # Unpack the output of the NN to extract the probabilities associated
         # with each action.
         # 1) Extract the data field from the NN output
@@ -102,19 +103,17 @@ def iterate_batches(env, net, batch_size):
         #    the probability distribution are stored. The second element of the
         #    network output stores the gradient functions (which we don't use) 
         act_probs = act_probs_v.data.numpy()[0]
-        
+        print(act_probs)
         # Sample the probability distribution the NN predicted to choose
         # which action to take next.
         action = np.random.choice(len(act_probs), p=act_probs)
-
+        print(action)
         # Run one simulation step using the action we sampled.
         next_obs, reward, is_done, _ = env.step(action)
-
         # Process the simulation step:
         #   - add the current step reward to the total episode reward
         #   - append the current episode
         episode_reward += reward
-
         # Add the **INITIAL** observation and action we took to our list of  
         # steps for the current episode
         episode_steps.append(EpisodeStep(observation=obs, action=action))
@@ -176,6 +175,7 @@ def filter_batch(batch, percentile):
     # the train_obs and train_act variables
     train_obs = []
     train_act = []
+    print('done_filtering----------------------------------------------------------------')
 
     # For each episode in the batch determine if the episode is an "elite" 
     # episode (it has a reward above the threshold reward_bound). If this is 
@@ -208,12 +208,14 @@ if __name__ == '__main__':
 
     # Create the NN object
     net = Net(obs_size, HIDDEN_SIZE, n_actions)
+
     # PyTorch module that combines softmax and cross-entropy loss in one 
     # expresion
     objective = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=net.parameters(), lr=0.01)
+
     # Tensorboard writer for plotting training performance
-    writer = SummaryWriter(comment="-cartpole")
+    #writer = SummaryWriter(comment="-cartpole")
 
     # For every batch of episodes (16 episodes per batch) we identify the
     # episodes in the top 30% and we train our NN on them.
@@ -243,14 +245,15 @@ if __name__ == '__main__':
         print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
             iter_no, loss_v.item(), reward_m, reward_b))
         # Save tensorboard data
-        writer.add_scalar("loss", loss_v.item(), iter_no)
-        writer.add_scalar("reward_bound", reward_b, iter_no)
-        writer.add_scalar("reward_mean", reward_m, iter_no)
+        #writer.add_scalar("loss", loss_v.item(), iter_no)
+        #writer.add_scalar("reward_bound", reward_b, iter_no)
+        #writer.add_scalar("reward_mean", reward_m, iter_no)
 
         # When the reward is sufficiently large we consider the problem has
         # been solved
-        REWARD_THRESHOLD = 2000
+        REWARD_THRESHOLD = 600
         if reward_m > REWARD_THRESHOLD:
             print("Solved!")
             break
-    writer.close()
+    print('end---------------------------------------------------------')
+    #writer.close()

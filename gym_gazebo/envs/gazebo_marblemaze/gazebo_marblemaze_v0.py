@@ -8,15 +8,19 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from datetime import datetime
 
+from gazebo_msgs.msg import ModelState 
+from gazebo_msgs.srv import SetModelState
+
 from geometry_msgs.msg import Twist
 from gym import utils, spaces
 from gym_gazebo.envs import gazebo_env
 from gym.utils import seeding
 
+import math
+
 import message_filters
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 
-import math
 import numpy as np
 
 from std_srvs.srv import Empty
@@ -39,17 +43,21 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         # Define end conditions, TODO angle end condition needs to be more restrictive angle<2? position < wall left+something?
         THETA_THRESHOLD_DEG = 4
         self.theta_threshold_radians = THETA_THRESHOLD_DEG * 2 * math.pi / 360
-        self.x_threshold_m = 0.05
+        self.v_threshold_m = 0.5
+
+        self.prev_err = 0
+
+        self.x_goal = 150
 
         # Setup pub/sub for state/action
-        # self._pub = rospy.Publisher('/cart_pole_controller/command', Float64, queue_size=1)
-        # rospy.Subscriber("/cart_pole/joint_states", JointState, self.callback)
-
         self.joint_pub = rospy.Publisher("/trough/rev_position_controller/command", Float64, queue_size=1)
         self.trough_sub = message_filters.Subscriber('/trough/joint_states', JointState)
+        self.ball_sub = message_filters.Subscriber("/wheel/camera1/image_raw", Image)
+        self.ball_sub.registerCallback( self.get_ball_pos_callback)
+        self.bridge = CvBridge()
+        
         # Image is comented because we are polling for images instead of using callbacks
         #self.ball_sub = message_filters.Subscriber("/wheel/camera1/image_raw", Image)
-        self.trough_pos = 0.0
 
         # Gazebo specific services to start/stop its behavior and
         # facilitate the overall RL environment
@@ -64,15 +72,13 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         self.action_space = spaces.Discrete(2)
 
         high = np.array([
-            self.x_threshold_m * 2,
-            np.finfo(np.float32).max,
-            self.theta_threshold_radians * 2,
+            self.v_threshold_m * 2,
             np.finfo(np.float32).max])
         self.observation_space = spaces.Box(-high, high)
 
         # State
-        self.current_vel = 0
-        self.data = None
+        self.ball_pos_x = None
+        self.trough_vel = 0
 
         # Round state to decrease state space size
         self.num_dec_places = 2
@@ -103,35 +109,29 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             circles = np.round(circles[0, :]).astype("int")
             for (x, y, r) in circles:
                 cv2.circle(output, (x, y), r, (0, 255, 0), 4)
-        rospy.loginfo('Image acquired')
+        #rospy.loginfo('Image acquired')
         cv2.imshow("Raw image", output)
-        rospy.loginfo('x: ' + str(x) + 'y:' + str(y))
+        #rospy.loginfo('x: ' + str(x) + 'y:' + str(y))
         cv2.waitKey(3)
         self.ball_pos_x = x
         return 
 
     def set_trough_position(self, ball_pos_x):
         x_desired = 150
-        self.dt = ((datetime.now() - self.t).microseconds)/1000.0
-        self.t = datetime.now()
-
+        
         x_err =  x_desired - ball_pos_x
-        deriv = (x_err - self.prev_err)/self.dt
+        deriv = (x_err - self.prev_err)
 
-        Kp = -0.0002
-        Kd = -1.2
+        Kp = -0.0002*200
+        Kd = -0.00012
 
-        self.trough_pos_write = Kp*x_err + Kd*deriv
+        self.trough_vel = Kp*x_err + Kd*deriv
 
         print('\n------\n') 
-        rospy.loginfo('ball pos read: '+ str(ball_pos_x))
-        rospy.loginfo('trough x error: '+ str(Kp*x_err))
-        rospy.loginfo('trough derivative error: '+ str(Kd*deriv))
-        rospy.loginfo('trough pos write: '+ str(self.trough_pos_write))
 
         self.prev_err = x_err
 
-        self.joint_pub.publish(self.trough_pos_write)
+        self.joint_pub.publish(self.trough_vel)
 
     def step(self, action):
         # Unpause simulation to make observations
@@ -142,12 +142,9 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             print ("/gazebo/pause_physics service call failed")
 
         # Wait for data
-        data = None
-        while data is None:
-            try:
-                data=rospy.wait_for_message('/wheel/camera1/image_raw"', Image, timeout=5)
-            except:
-                pass
+        x_pos = None
+        while x_pos is None:
+            x_pos = self.ball_pos_x
 
         # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
@@ -156,81 +153,90 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         except (rospy.ServiceException) as e:
             print ("/gazebo/unpause_physics service call failed")
 
-        ball_pos_x = self.get_ball_pos_callback(data)
-
-        return [0,0,0,0],0,False
-
         # Take action
-        self.set_trough_position(ball_pos_x)
-        return
-
+        if action > 0.5:
+            self.trough_vel += 0.02
+        else:
+            self.trough_vel += -0.02
+        
+        self.joint_pub.publish(self.trough_vel)
+        
+        print('step')
+    
         # Define state, TODO change
-        x = self.data.position[1]
-        x_dot = self.data.velocity[1]
-        theta = math.atan(math.tan(self.data.position[0]))
-        theta_dot = self.data.velocity[0]
-        state = [round(x, 2), round(x_dot, 1), round(theta, 2), round(theta_dot, 0)]
+        state = [self.ball_pos_x,self.trough_vel]
 
-        # Limit state space
-        state[0] = 0
-        state[1] = 0
 
         # Check for end condition
-        done =  x < -self.x_threshold_m \
-                or x > self.x_threshold_m \
-                or theta < -self.theta_threshold_radians \
-                or theta > self.theta_threshold_radians
+        done =  self.trough_vel < -self.v_threshold_m \
+                or self.trough_vel > self.v_threshold_m
         done = bool(done)
 
         #TODO reward = 1/(err+1)?
         if not done:
-            reward = 1.0
+            reward = 1.0/(abs(self.x_goal-self.ball_pos_x)+1)
         else:
             reward = 0
 
         # Reset data
-        self.data = None
+        self.ball_pos_x = 0
+
         return state, reward, done, {}
+    
+    
+    def reset_ball_pos(self):    
+        state_msg = ModelState()
+        state_msg.model_name = 'ball'
+        state_msg.pose.position.x = -0.012754 
+        state_msg.pose.position.y = -0.034496
+        state_msg.pose.position.z = 0.155751
+        state_msg.pose.orientation.x = 0
+        state_msg.pose.orientation.y = 0
+        state_msg.pose.orientation.z = 0
+        state_msg.pose.orientation.w = 0
+        rospy.wait_for_service('/gazebo/set_model_state')
+        print('ball reset')
+        try:
+            set_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+            resp = set_state( state_msg )
+        except rospy.ServiceException:
+            print( "Service call failed")
 
     def reset(self):
         # Reset world
         rospy.wait_for_service('/gazebo/set_link_state')
-        return [0,0,0,0]
-        self.set_link(LinkState(link_name='pole'))
-        self.set_link(LinkState(link_name='cart'))
 
-        # Unpause simulation to make observation
+        self.joint_pub.publish(float(0)) #vel
+        time.sleep(0.01)
+
+        self.reset_ball_pos()
+
+        # Unpause simulation to make observations
         rospy.wait_for_service('/gazebo/unpause_physics')
         try:
             self.unpause()
         except (rospy.ServiceException) as e:
-            print ("/gazebo/unpause_physics service call failed")
+            print ("/gazebo/pause_physics service call failed")
 
         # Wait for data
-        data = self.data
-        while data is None:
-            data = self.data
+        x_pos = None
+        while x_pos is None:
+            x_pos = self.ball_pos_x
 
-        # Pause simulation
+        # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
         try:
             self.pause()
         except (rospy.ServiceException) as e:
-            print ("/gazebo/pause_physics service call failed")
+            print ("/gazebo/unpause_physics service call failed")
 
-        # Process state
-        x = self.data.position[1]
-        x_dot = self.data.velocity[1]
-        theta = math.atan(math.tan(self.data.position[0]))
-        theta_dot = self.data.velocity[0]
-        state = [round(x, 2), round(x_dot, 1), round(theta, 2), round(theta_dot, 0)]
+        print(str(x_pos))
 
-        # Limit state space
-        state[0] = 0
-        state[1] = 0
+        state = [x_pos, self.trough_vel]
 
-        self.current_vel = 0
+        self.ball_pos_x = 0
+        self.trough_vel = 0
 
         # Reset data
-        self.data = None
+        print('did_reset-------------------------------------------------')
         return state
