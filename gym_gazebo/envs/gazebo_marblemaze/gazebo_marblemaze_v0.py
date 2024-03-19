@@ -44,7 +44,8 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         # Define end conditions, TODO angle end condition needs to be more restrictive angle<2? position < wall left+something?
         THETA_THRESHOLD_DEG = 4
         self.theta_threshold_radians = THETA_THRESHOLD_DEG * 2 * math.pi / 360
-        self.v_threshold_m = 10
+        self.trough_angle_threshold = 0.1
+        self.v_threshold_m = 6
         self.x_threshold_high = 0.09
         self.x_threshold_low = -0.04
 
@@ -78,10 +79,16 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         self._seed()
         self.action_space = spaces.Discrete(2)
 
+        low = np.array([
+            self.x_threshold_low,
+            -self.v_threshold_m,
+            -self.trough_angle_threshold])
+
         high = np.array([
-            self.v_threshold_m * 2,
-            np.finfo(np.float32).max])
-        self.observation_space = spaces.Box(-high, high)
+            self.x_threshold_high,
+            self.v_threshold_m,
+            self.trough_angle_threshold])
+        self.observation_space = spaces.Box(low, high)
 
         # State
         self.ball_pos_x = None
@@ -89,7 +96,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         self.trough_pos = None
 
         # Round state to decrease state space size
-        self.num_dec_places = 2
+        self.num_dec_places = 3
 
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -99,7 +106,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         self.ball_pos_x = data.pose[1].position.x
         
 
-    def get_ball_pos_callbackw(self, img_msg):
+    def xxxget_ball_pos_callbackxxx(self, img_msg):
         '''
         @brief Process image
         @retval returns ball position in trough
@@ -167,9 +174,9 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         # Take action
         if action > 0.5:
-            self.trough_vel += 0.02
+            self.trough_vel += 0.01
         else:
-            self.trough_vel += -0.02
+            self.trough_vel += -0.01
         
         self.joint_pub.publish(self.trough_vel)
 
@@ -179,20 +186,21 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         #print('step')
     
         # Define state, TODO change
-        state = [self.ball_pos_x,self.trough_vel]
+        state = [self.ball_pos_x,self.trough_vel,self.trough_pos[0]]
 
 
         # Check for end condition
         done =  x_pos < self.x_threshold_low \
                 or x_pos > self.x_threshold_high \
-                or abs(self.trough_vel) > self.v_threshold_m
+                or abs(self.trough_vel) > self.v_threshold_m \
+                or abs(self.trough_pos[0] - 0.2) > self.trough_angle_threshold
         done = bool(done)
         
         #print(x_pos)
 
         #TODO reward = 1/(err+1)?
         if not done:
-            reward = 0.5 + 1.0/(100*abs(self.x_goal-self.ball_pos_x)+1)
+            reward = 0.5 + 1.0/(200*abs(self.x_goal-self.ball_pos_x)+1)
             #reward = 1.0
         else:
             reward = 0
@@ -227,7 +235,6 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
     
     def get_trough_callback(self,data):
         self.trough_pos = data.position
-        #print(data.velocity)
     
     def reset_trough_angle(self):
         print('resetting trough')
@@ -275,7 +282,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         #print(str(x_pos))
 
-        state = [x_pos, self.trough_vel]
+        state = [x_pos, self.trough_vel, self.trough_pos[0]]
 
         self.ball_pos_x = None
         self.trough_vel = 0

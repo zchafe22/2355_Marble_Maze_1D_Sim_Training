@@ -103,7 +103,7 @@ def iterate_batches(env, net, batch_size):
         #    the probability distribution are stored. The second element of the
         #    network output stores the gradient functions (which we don't use) 
         act_probs = act_probs_v.data.numpy()[0]
-        #print(act_probs)
+        print(act_probs)
         # Sample the probability distribution the NN predicted to choose
         # which action to take next.
         action = np.random.choice(len(act_probs), p=act_probs)
@@ -245,8 +245,8 @@ if __name__ == '__main__':
         optimizer.step()#TODO adjust gradients
 
         # Display summary of current batch
-        print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
-            iter_no, loss_v.item(), reward_m, reward_b))
+        #print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
+        #    iter_no, loss_v.item(), reward_m, reward_b))
         # Save tensorboard data
         #writer.add_scalar("loss", loss_v.item(), iter_no)
         #writer.add_scalar("reward_bound", reward_b, iter_no)
@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
         # When the reward is sufficiently large we consider the problem has
         # been solved
-        REWARD_THRESHOLD = 600
+        REWARD_THRESHOLD = 1000
         if reward_m > REWARD_THRESHOLD:
             print("Solved!")
             break
