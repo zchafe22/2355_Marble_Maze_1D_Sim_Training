@@ -103,11 +103,11 @@ def iterate_batches(env, net, batch_size):
         #    the probability distribution are stored. The second element of the
         #    network output stores the gradient functions (which we don't use) 
         act_probs = act_probs_v.data.numpy()[0]
-        print(act_probs)
+        #print(act_probs)
         # Sample the probability distribution the NN predicted to choose
         # which action to take next.
         action = np.random.choice(len(act_probs), p=act_probs)
-        print(action)
+        #print(action)
         # Run one simulation step using the action we sampled.
         next_obs, reward, is_done, _ = env.step(action)
         # Process the simulation step:
@@ -127,6 +127,9 @@ def iterate_batches(env, net, batch_size):
         # next episode.
         if is_done:
             batch.append(Episode(reward=episode_reward, steps=episode_steps))
+            print('reward:')
+            print(episode_reward)
+            print('------------------------------')
             episode_reward = 0.0
             episode_steps = []
             next_obs = env.reset()

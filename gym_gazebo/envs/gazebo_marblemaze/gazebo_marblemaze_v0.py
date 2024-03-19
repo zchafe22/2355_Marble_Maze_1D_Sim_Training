@@ -8,7 +8,8 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from datetime import datetime
 
-from gazebo_msgs.msg import ModelState 
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.msg import ModelStates
 from gazebo_msgs.srv import SetModelState
 
 from geometry_msgs.msg import Twist
@@ -43,17 +44,23 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         # Define end conditions, TODO angle end condition needs to be more restrictive angle<2? position < wall left+something?
         THETA_THRESHOLD_DEG = 4
         self.theta_threshold_radians = THETA_THRESHOLD_DEG * 2 * math.pi / 360
-        self.v_threshold_m = 0.5
+        self.v_threshold_m = 10
+        self.x_threshold_high = 0.09
+        self.x_threshold_low = -0.04
 
         self.prev_err = 0
 
-        self.x_goal = 150
+        self.x_goal = 0.04
+
+        self.step_count = 0
 
         # Setup pub/sub for state/action
         self.joint_pub = rospy.Publisher("/trough/rev_position_controller/command", Float64, queue_size=1)
         self.trough_sub = message_filters.Subscriber('/trough/joint_states', JointState)
-        self.ball_sub = message_filters.Subscriber("/wheel/camera1/image_raw", Image)
-        self.ball_sub.registerCallback( self.get_ball_pos_callback)
+        self.trough_sub.registerCallback(self.get_trough_callback)
+        self.ball_sub = message_filters.Subscriber('gazebo/model_states', ModelStates)
+        #self.ball_sub = message_filters.Subscriber("/wheel/camera1/image_raw", Image)
+        self.ball_sub.registerCallback(self.get_ball_pos_callback)
         self.bridge = CvBridge()
         
         # Image is comented because we are polling for images instead of using callbacks
@@ -79,6 +86,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         # State
         self.ball_pos_x = None
         self.trough_vel = 0
+        self.trough_pos = None
 
         # Round state to decrease state space size
         self.num_dec_places = 2
@@ -87,7 +95,11 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
     
-    def get_ball_pos_callback(self, img_msg):
+    def get_ball_pos_callback(self, data):
+        self.ball_pos_x = data.pose[1].position.x
+        
+
+    def get_ball_pos_callbackw(self, img_msg):
         '''
         @brief Process image
         @retval returns ball position in trough
@@ -160,26 +172,37 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             self.trough_vel += -0.02
         
         self.joint_pub.publish(self.trough_vel)
+
+        #print(action)
+        #print(self.trough_vel)
         
-        print('step')
+        #print('step')
     
         # Define state, TODO change
         state = [self.ball_pos_x,self.trough_vel]
 
 
         # Check for end condition
-        done =  self.trough_vel < -self.v_threshold_m \
-                or self.trough_vel > self.v_threshold_m
+        done =  x_pos < self.x_threshold_low \
+                or x_pos > self.x_threshold_high \
+                or abs(self.trough_vel) > self.v_threshold_m
         done = bool(done)
+        
+        #print(x_pos)
 
         #TODO reward = 1/(err+1)?
         if not done:
-            reward = 1.0/(abs(self.x_goal-self.ball_pos_x)+1)
+            reward = 0.5 + 1.0/(100*abs(self.x_goal-self.ball_pos_x)+1)
+            #reward = 1.0
         else:
             reward = 0
 
+        self.step_count += 1
+
+        if self.step_count == 800:
+            print('Max step count')
+
         # Reset data
-        self.ball_pos_x = 0
 
         return state, reward, done, {}
     
@@ -187,7 +210,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
     def reset_ball_pos(self):    
         state_msg = ModelState()
         state_msg.model_name = 'ball'
-        state_msg.pose.position.x = -0.012754 
+        state_msg.pose.position.x = -0.01
         state_msg.pose.position.y = -0.034496
         state_msg.pose.position.z = 0.155751
         state_msg.pose.orientation.x = 0
@@ -201,15 +224,31 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             resp = set_state( state_msg )
         except rospy.ServiceException:
             print( "Service call failed")
+    
+    def get_trough_callback(self,data):
+        self.trough_pos = data.position
+        #print(data.velocity)
+    
+    def reset_trough_angle(self):
+        print('resetting trough')
+        while self.trough_pos == None:
+            pass
+
+        offset = 0.2
+        while abs(self.trough_pos[0]-offset) >= 0.001:
+            #print(self.trough_pos[0])
+            if self.trough_pos[0] - offset < 0:
+                self.joint_pub.publish(0.1)
+            else:
+                self.joint_pub.publish(-0.1)
+        self.joint_pub.publish(0)
+        print('done resetting trough')
+        time.sleep(0.2)
+        return
 
     def reset(self):
         # Reset world
         rospy.wait_for_service('/gazebo/set_link_state')
-
-        self.joint_pub.publish(float(0)) #vel
-        time.sleep(0.01)
-
-        self.reset_ball_pos()
 
         # Unpause simulation to make observations
         rospy.wait_for_service('/gazebo/unpause_physics')
@@ -217,6 +256,10 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             self.unpause()
         except (rospy.ServiceException) as e:
             print ("/gazebo/pause_physics service call failed")
+
+        self.reset_trough_angle()
+        time.sleep(0.2)
+        self.reset_ball_pos()
 
         # Wait for data
         x_pos = None
@@ -230,12 +273,14 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         except (rospy.ServiceException) as e:
             print ("/gazebo/unpause_physics service call failed")
 
-        print(str(x_pos))
+        #print(str(x_pos))
 
         state = [x_pos, self.trough_vel]
 
-        self.ball_pos_x = 0
+        self.ball_pos_x = None
         self.trough_vel = 0
+
+        self.step_count = 0
 
         # Reset data
         print('did_reset-------------------------------------------------')
