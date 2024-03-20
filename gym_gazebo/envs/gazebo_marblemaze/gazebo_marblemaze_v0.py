@@ -45,7 +45,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         THETA_THRESHOLD_DEG = 4
         self.theta_threshold_radians = THETA_THRESHOLD_DEG * 2 * math.pi / 360
         self.trough_angle_threshold = 0.1
-        self.v_threshold_m = 6
+        self.v_threshold_m = 4
         self.x_threshold_high = 0.09
         self.x_threshold_low = -0.04
 
@@ -92,6 +92,8 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         # State
         self.ball_pos_x = None
+        self.prev_ball_pos_x = None
+        self.ball_vel = 0
         self.trough_vel = 0
         self.trough_pos = None
 
@@ -103,7 +105,11 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         return [seed]
     
     def get_ball_pos_callback(self, data):
+        self.prev_ball_pos_x = self.ball_pos_x
         self.ball_pos_x = data.pose[1].position.x
+
+        if self.ball_pos_x is not None and self.prev_ball_pos_x is not None:
+            self.ball_vel = self.ball_pos_x - self.prev_ball_pos_x
         
 
     def xxxget_ball_pos_callbackxxx(self, img_msg):
@@ -162,8 +168,12 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         # Wait for data
         x_pos = None
-        while x_pos is None:
+        prev_pos = None
+        angle = None
+        while x_pos is None or prev_pos is None or angle is None:
+            prev_pos = self.prev_ball_pos_x
             x_pos = self.ball_pos_x
+            angle = self.trough_pos[0]
 
         # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
@@ -186,24 +196,23 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         #print('step')
     
         # Define state, TODO change
-        state = [self.ball_pos_x,self.trough_vel,self.trough_pos[0]]
+        state = [x_pos, x_pos-prev_pos, angle]
 
 
         # Check for end condition
         done =  x_pos < self.x_threshold_low \
                 or x_pos > self.x_threshold_high \
-                or abs(self.trough_vel) > self.v_threshold_m \
-                or abs(self.trough_pos[0] - 0.2) > self.trough_angle_threshold
+                or abs(angle - 0.2) > self.trough_angle_threshold
         done = bool(done)
         
-        #print(x_pos)
+        print(x_pos-prev_pos)
 
         #TODO reward = 1/(err+1)?
         if not done:
-            reward = 0.5 + 1.0/(200*abs(self.x_goal-self.ball_pos_x)+1)
-            #reward = 1.0
+            reward = 1.5/(200*abs(self.x_goal-x_pos)+1)
+            #print(reward)
         else:
-            reward = 0
+            reward = -50
 
         self.step_count += 1
 
@@ -270,8 +279,12 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         # Wait for data
         x_pos = None
-        while x_pos is None:
+        prev_pos = None
+        angle = None
+        while x_pos is None or prev_pos is None or angle is None:
+            prev_pos = self.prev_ball_pos_x
             x_pos = self.ball_pos_x
+            angle = self.trough_pos[0]
 
         # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
@@ -282,11 +295,11 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         #print(str(x_pos))
 
-        state = [x_pos, self.trough_vel, self.trough_pos[0]]
+        state = [x_pos, x_pos-prev_pos, angle]
 
         self.ball_pos_x = None
         self.trough_vel = 0
-
+        self.prev_ball_pos_x = None
         self.step_count = 0
 
         # Reset data

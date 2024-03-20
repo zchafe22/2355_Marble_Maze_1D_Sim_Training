@@ -22,6 +22,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+import matplotlib.pyplot as plt
+
 
 HIDDEN_SIZE = 128 # number of neurons in hidden layer
 BATCH_SIZE = 16   # number of episodes to play for every network iteration
@@ -103,7 +105,7 @@ def iterate_batches(env, net, batch_size):
         #    the probability distribution are stored. The second element of the
         #    network output stores the gradient functions (which we don't use) 
         act_probs = act_probs_v.data.numpy()[0]
-        print(act_probs)
+        #print(act_probs)
         # Sample the probability distribution the NN predicted to choose
         # which action to take next.
         action = np.random.choice(len(act_probs), p=act_probs)
@@ -218,7 +220,9 @@ if __name__ == '__main__':
     optimizer = optim.Adam(params=net.parameters(), lr=0.01)
 
     # Tensorboard writer for plotting training performance
-    #writer = SummaryWriter(comment="-cartpole")
+    #writer = SummaryWriter(comment="-marblemaze")
+
+    reward_over_time = []
 
     # For every batch of episodes (16 episodes per batch) we identify the
     # episodes in the top 30% and we train our NN on them.
@@ -251,12 +255,28 @@ if __name__ == '__main__':
         #writer.add_scalar("loss", loss_v.item(), iter_no)
         #writer.add_scalar("reward_bound", reward_b, iter_no)
         #writer.add_scalar("reward_mean", reward_m, iter_no)
+        reward_over_time.append(reward_m)
+
+        print('---------')
+        print('batch mean reward:')
+        print(reward_m)
+        print('Rewards over Time:')
+        print(reward_over_time)
+        print('---------')
+
+        #plt.plot(reward_over_time)
+        #plt.show(block=False)
+        #plt.pause(3)
+        #plt.close()
 
         # When the reward is sufficiently large we consider the problem has
         # been solved
-        REWARD_THRESHOLD = 1000
+
+        REWARD_THRESHOLD = 400
         if reward_m > REWARD_THRESHOLD:
             print("Solved!")
+            torch.save(net.state_dict(),'neural_network')
+            plt.plot(reward_over_time)
             break
     print('end---------------------------------------------------------')
     #writer.close()
