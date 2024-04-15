@@ -42,12 +42,10 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         gazebo_env.GazeboEnv.__init__(self, "/home/fizzer/enph353_gym-gazebo-noetic/gym_gazebo/envs/ros_ws/src/maze_pkg/launch/1dmodel.launch")
 
         # Define end conditions, TODO angle end condition needs to be more restrictive angle<2? position < wall left+something?
-        THETA_THRESHOLD_DEG = 4
-        self.theta_threshold_radians = THETA_THRESHOLD_DEG * 2 * math.pi / 360
-        self.trough_angle_threshold = 0.1
-        self.v_threshold_m = 4
-        self.x_threshold_high = 0.09
-        self.x_threshold_low = -0.04
+        self.trough_angle_threshold = 0.10
+        self.x_threshold_high = 0.19
+        self.x_threshold_low = -0.14
+        self.v_threshold = (self.x_threshold_high-self.x_threshold_low)/2
 
         self.prev_err = 0
 
@@ -77,17 +75,18 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         # Setup the environment
         self._seed()
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(3)
 
         low = np.array([
             self.x_threshold_low,
-            -self.v_threshold_m,
+            -self.v_threshold,
             -self.trough_angle_threshold])
 
         high = np.array([
             self.x_threshold_high,
-            self.v_threshold_m,
+            self.v_threshold,
             self.trough_angle_threshold])
+        
         self.observation_space = spaces.Box(low, high)
 
         # State
@@ -173,7 +172,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         while x_pos is None or prev_pos is None or angle is None:
             prev_pos = self.prev_ball_pos_x
             x_pos = self.ball_pos_x
-            angle = self.trough_pos[0]
+            angle = self.trough_pos[0]-0.2
 
         # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
@@ -183,10 +182,15 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             print ("/gazebo/unpause_physics service call failed")
 
         # Take action
-        if action > 0.5:
+        if action == 1:
             self.trough_vel += 0.01
-        else:
+            #print('positive')
+        elif action == 2:
             self.trough_vel += -0.01
+            #print('negative')
+        else:
+            self.trough_vel += 0
+            #print('still')
         
         self.joint_pub.publish(self.trough_vel)
 
@@ -196,23 +200,29 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         #print('step')
     
         # Define state, TODO change
-        state = [x_pos, x_pos-prev_pos, angle]
+        state = [x_pos - self.x_goal, x_pos-prev_pos, angle]
 
 
         # Check for end condition
         done =  x_pos < self.x_threshold_low \
                 or x_pos > self.x_threshold_high \
-                or abs(angle - 0.2) > self.trough_angle_threshold
+                or abs(angle) > self.trough_angle_threshold
         done = bool(done)
-        
-        print(x_pos-prev_pos)
 
         #TODO reward = 1/(err+1)?
-        if not done:
-            reward = 1.5/(200*abs(self.x_goal-x_pos)+1)
+        #if not done:
+        #    reward = 1/(20*abs(self.x_goal-x_pos)+1)
             #print(reward)
+        #else:
+        #    if x_pos < self.x_threshold_low or x_pos > self.x_threshold_high:
+        #        reward = -20
+        #    else:
+        #        reward = -5
+
+        if abs(x_pos - self.x_goal) <= 0.01:
+            reward = 1
         else:
-            reward = -50
+            reward = 0
 
         self.step_count += 1
 
@@ -220,6 +230,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
             print('Max step count')
 
         # Reset data
+        print(reward)
 
         return state, reward, done, {}
     
@@ -284,7 +295,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
         while x_pos is None or prev_pos is None or angle is None:
             prev_pos = self.prev_ball_pos_x
             x_pos = self.ball_pos_x
-            angle = self.trough_pos[0]
+            angle = self.trough_pos[0]-0.2
 
         # Pause
         rospy.wait_for_service('/gazebo/pause_physics')
@@ -295,7 +306,7 @@ class GazeboMarbleMazev0Env(gazebo_env.GazeboEnv):
 
         #print(str(x_pos))
 
-        state = [x_pos, x_pos-prev_pos, angle]
+        state = [x_pos - self.x_goal, x_pos-prev_pos, angle]
 
         self.ball_pos_x = None
         self.trough_vel = 0

@@ -399,5 +399,23 @@
         <pose>0 0 10 0 -0 0</pose>
       </light>
     </state>
+
+    <!-- 
+    Change simulation speed
+      real_time_factor
+        attempted RTF simulation tries to run at (not guarateed) 
+      real_time_update_rate (default 1000)
+        increase if computer can run faster
+      max_step_size (default 0.001)
+        increasing it increases RTF but simulation accuracy is
+        degraded
+
+        <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>2.0</real_time_factor>
+      <real_time_update_rate>2000.0</real_time_update_rate>
+    </physics> 
+    -->
+    <!-- Increase simulation speed. Keep max_step_size=0.001 to maintain same quality -->
   </world>
 </sdf>

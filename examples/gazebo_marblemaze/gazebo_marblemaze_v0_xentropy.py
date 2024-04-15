@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 
 HIDDEN_SIZE = 128 # number of neurons in hidden layer
 BATCH_SIZE = 16   # number of episodes to play for every network iteration
-PERCENTILE = 70   # only the episodes with the top 30% total reward are used 
+PERCENTILE = 75   # only the episodes with the top 30% total reward are used 
                   # for training
 
 class Net(nn.Module):
@@ -39,7 +39,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
 
         # Define the NN architecture
-        #
+        #source ~/enph353_gym-gazebo-noetic/gym_gazebo/envs/ros_ws/devel/setup.bash
         # REMINDER:
         # as the last layer outputs raw numerical values instead of 
         # probabilities, when we later in the code use the network to predict
@@ -50,6 +50,8 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, n_actions)
         )
+
+        self.max_reward = 0
 
     def forward(self, x):
         return self.net(x)
@@ -109,6 +111,7 @@ def iterate_batches(env, net, batch_size):
         # Sample the probability distribution the NN predicted to choose
         # which action to take next.
         action = np.random.choice(len(act_probs), p=act_probs)
+        #print(action)
         #print(action)
         # Run one simulation step using the action we sampled.
         next_obs, reward, is_done, _ = env.step(action)
@@ -187,7 +190,7 @@ def filter_batch(batch, percentile):
     # the case add the episodes observations and action to the train_obs and 
     # train_act
     for example in batch:
-        if example.reward < reward_bound:
+        if example.reward < reward_bound or example.reward <= 0:
             continue
         # We reach here if the episode is "elite"
         # adds the observations and actions from each episode to our training
@@ -196,6 +199,7 @@ def filter_batch(batch, percentile):
         # action of the step)
         train_obs.extend(map(lambda step: step.observation, example.steps))
         train_act.extend(map(lambda step: step.action, example.steps))
+        print('trained on')
 
     # Convert the observations and actions into tensors and return them to be  
     # used to train the NN
@@ -212,15 +216,20 @@ if __name__ == '__main__':
     n_actions = env.action_space.n #: Set action size space
 
     # Create the NN object
-    net = Net(obs_size, HIDDEN_SIZE, n_actions)
+    # net = Net(obs_size, HIDDEN_SIZE, n_actions)
+    net = torch.load("NN_3actions_rewardinrange_friction_0.3")
+    print('-------------------------------------------')
+    print(net.max_reward)
+    print("-------------------------------------------")
 
     # PyTorch module that combines softmax and cross-entropy loss in one 
     # expresion
     objective = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=net.parameters(), lr=0.01)
+    #scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.95)
 
     # Tensorboard writer for plotting training performance
-    #writer = SummaryWriter(comment="-marblemaze")
+    writer = SummaryWriter(comment="-marblemaze")
 
     reward_over_time = []
 
@@ -249,20 +258,21 @@ if __name__ == '__main__':
         optimizer.step()#TODO adjust gradients
 
         # Display summary of current batch
-        #print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
-        #    iter_no, loss_v.item(), reward_m, reward_b))
+        print("%d: loss=%.3f, reward_mean=%.1f, reward_bound=%.1f" % (
+           iter_no, loss_v.item(), reward_m, reward_b))
+        print('Iteration-{0} lr: {1}'.format(iter_no, optimizer.param_groups[0]['lr']))
         # Save tensorboard data
-        #writer.add_scalar("loss", loss_v.item(), iter_no)
-        #writer.add_scalar("reward_bound", reward_b, iter_no)
-        #writer.add_scalar("reward_mean", reward_m, iter_no)
+        writer.add_scalar("loss", loss_v.item(), iter_no)
+        writer.add_scalar("reward_bound", reward_b, iter_no)
+        writer.add_scalar("reward_mean", reward_m, iter_no)
         reward_over_time.append(reward_m)
 
-        print('---------')
-        print('batch mean reward:')
-        print(reward_m)
-        print('Rewards over Time:')
-        print(reward_over_time)
-        print('---------')
+        # print('---------')
+        # print('batch mean reward:')
+        # print(reward_m)
+        # print('Rewards over Time:')
+        # print(reward_over_time)
+        # print('---------')
 
         #plt.plot(reward_over_time)
         #plt.show(block=False)
@@ -272,11 +282,20 @@ if __name__ == '__main__':
         # When the reward is sufficiently large we consider the problem has
         # been solved
 
-        REWARD_THRESHOLD = 400
+        # save model after hitting new max reward mean
+        if reward_m > net.max_reward or iter_no == 100 or iter_no == 200 or iter_no == 400:
+            net.max_reward = reward_m
+            torch.save(net,'NN_3actions_rewardinrange_pf')
+            if iter_no == 100:
+                print('Iteration 100')
+            else:
+                print("New Maximum Achieved")
+
+        REWARD_THRESHOLD = 300
         if reward_m > REWARD_THRESHOLD:
             print("Solved!")
-            torch.save(net.state_dict(),'neural_network')
-            plt.plot(reward_over_time)
             break
+
+        #scheduler.step()
     print('end---------------------------------------------------------')
-    #writer.close()
+    writer.close()
