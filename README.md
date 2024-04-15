@@ -6,8 +6,8 @@ Refer to [INSTALL.md](INSTALL.md)
 To train an AI go to directory where gym-gazebo is contained, then run:
 ```
 source gym_gazebo/envs/ros_ws/devel/setup.bash
-cd examples/gazebo_cartpole  
-python gazebo_cartpole_v0.py
+cd examples/gazebo_marble_maze  
+python gazebo_marblemaze_v0_xentropy.py
 ```
 
 ### Killing background processes
